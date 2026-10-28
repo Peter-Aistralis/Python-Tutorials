@@ -48,7 +48,7 @@ if response_llm.output[0].type == "function_call":
     # ... feed the result back and ask again
 ```
 
-⚠️ **This works — but only because it assumes `response.output[0]` is the only tool call.** That assumption is invisible here and will bite in step 3.
+**This works — but only because it assumes `response.output[0]` is the only tool call.** That assumption is invisible here and will bite in step 3.
 
 > Note: `2_basic_tool_call_framework.py` is the same step rewritten using the `openai-agents` SDK (`Agent`, `function_tool`, `Runner`). It's included to show what the framework *does* for you — and to make the point that steps 3–5 are what's happening under the hood of `Runner.run`.
 
@@ -61,7 +61,7 @@ Add a second tool (`send_email`) and a `while` loop so the agent can do *multipl
 ```
 Turn 1: [get_price(BTC)]
 Turn 2: [send_email(Peter, "...")]
-Turn 3: message("Done! 🎉")
+Turn 3: message("Done!")
 ```
 
 The loop looks reasonable:
@@ -72,12 +72,12 @@ for item in response.output:
         ... execute ...
         base_message.append({... "function_call_output" ...})
         response = client.responses.create(...)   # re-ask
-        break                                      # ⬅ exits after ONE call
+        break                                      # exits after ONE call
 ```
 
-✅ This works **for truly sequential prompts** — one call per turn, one turn at a time. That is a real class of tasks, and the script is correct for them.
+This works **for truly sequential prompts** — one call per turn, one turn at a time. That is a real class of tasks, and the script is correct for them.
 
-### 🐛 The bug it hides
+### The bug it hides
 
 The moment the model emits **more than one `function_call` in a single `response.output`**, this loop executes the first one, re-asks, and `break`s — the remaining calls are never executed and never get a `function_call_output`. The API then rejects the next request:
 
@@ -110,7 +110,7 @@ for tool_call in response.output:
         "call_id": tool_call.call_id,
         "output": json.dumps(result),
     })
-# re-ask ONCE, outside the loop
+
 response = client.responses.create(model="gpt-4o-mini", input=base_message, tools=tools)
 ```
 
@@ -121,7 +121,7 @@ Now a turn like `[get_price(BTC), get_price(ADA)]` works: both get executed, bot
 This script does **exactly one** tool-execution round. If the task needs a second round — e.g. *"fetch BTC price, **then** email it to Peter"* — the model is still mid-task after round 1. The script prints `response.output_text`, but `response.output` contains a `function_call`, not a message, so the text is empty:
 
 ```
-🔥 FINAL RIRI ANSWER 🔥
+FINAL ANSWER
                         ← nothing
 ```
 
@@ -196,8 +196,6 @@ That's why step 5 is the target: prompts describe *intent*, not *execution shape
 
 ```bash
 pip install openai requests python-dotenv
-# optional, only for 2_basic_tool_call_framework.py:
-pip install openai-agents nest-asyncio
 ```
 
 Create a `.env` in the repo root:
@@ -217,7 +215,7 @@ python 4_parallel_tool_calling.py
 python "5_react_(full_working_ai_agent).py"
 ```
 
-> **Watch for:** `400 No tool output found for function call ...` (step 3 on a parallel prompt) and an empty `🔥 FINAL RIRI ANSWER 🔥` block (step 4 on a multi-round prompt). Those are the two bugs the series is built to demonstrate.
+> **Watch for:** `400 No tool output found for function call ...` (step 3 on a parallel prompt) and an empty `FINAL ANSWER` block (step 4 on a multi-round prompt). Those are the two bugs the series is built to demonstrate.
 
 ---
 
