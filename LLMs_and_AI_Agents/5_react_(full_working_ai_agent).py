@@ -101,7 +101,7 @@ for item in response.output:
       if c.type == "output_text":
         print("Riri initially said:", c.text)
   elif item.type == "function_call":
-    print(f"Riri decided to call tool: {item.name} with args: {item.arguments}")
+    print(f"decided to call tool: {item.name} with args: {item.arguments}")
 # -----------------------------------------------
 
 
@@ -113,7 +113,7 @@ while True:
 
     # No more tool calls → model is done, print the message
     if not function_calls:
-        print("\n🔥 FINAL RIRI ANSWER 🔥\n")
+        print("\nFinal Answer \n")
         print(response.output_text)
         break
 
