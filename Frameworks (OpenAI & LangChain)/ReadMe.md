@@ -1,14 +1,12 @@
-# Video 2: Building Agents with OpenAI Agents SDK & LangChain
+# Building Agents with OpenAI Agents SDK & LangChain + your first Agentic AI Workflow
 
 Companion code for the second video in the "Build Your Own AI Agent" series.
 
 This video does three things:
 
-1. Rebuilds the agent from Video 1 using the **OpenAI Agents SDK** — same loop, now hidden behind `Runner.run`.
+1. Rebuilds the agent from Video 1 (LLms and AI Agents) using the **OpenAI Agents SDK** — same loop, now hidden behind `Runner.run`.
 2. Rebuilds the same agent using **LangChain** — same abstraction level, different plumbing.
 3. Shows **why handoffs fail for a manager workflow**, then fixes it with **Agents as Tools** (`as_tool()`).
-
-> **Important:** `3a_manager_handoff_BROKEN.py` is **intentionally broken**. It exists to demonstrate a real failure mode. The working version is `3b_manager_agents_as_tools_WORKS.py`. See [Handoff vs Agents as Tools](#handoff-vs-agents-as-tools) below for the full explanation.
 
 ---
 
@@ -18,8 +16,7 @@ This video does three things:
 |------|---------------|--------|
 | `1_basic_tool_call_openai_framework.py` | Single agent + two tools using the OpenAI Agents SDK (`Agent`, `function_tool`, `Runner.run`) | ✅ Works |
 | `2_basic_tool_call_langgchain_framework.py` | Same agent + tools rewritten with LangChain (`create_agent`, `@tool`, `ChatOpenAI`) | ✅ Works |
-| `3a_manager_handoff_BROKEN.py` | Manager workflow attempted with **handoffs** — fails, on purpose | ❌ Broken (intentional) |
-| `3b_manager_agents_as_tools_WORKS.py` | Same manager workflow using **Agents as Tools** (`as_tool()`) — works | ✅ Works |
+| `3_your_first_agentic_ai_workflow.py` | Same manager workflow using **Agents as Tools** (`handsoff`is  failing | ✅ Works |
 
 ---
 
@@ -93,9 +90,9 @@ The abstraction level is similar. The main differences:
 
 ---
 
-## 3a. The handoff attempt — intentionally broken
+## 3_your_first_agentic_ai_workflow.py
 
-`3a_manager_handoff_BROKEN.py`
+
 
 **Goal:** build a "Boss" agent that manages two specialists — Riri (crypto prices) and Peter (email) — using the SDK's handoff mechanism.
 
@@ -124,11 +121,9 @@ The official SDK issue is explicit: *"Handoffs are meant for scenarios where you
 
 So when Boss emits two `transfer_to_*` calls in one turn, only one can take effect. The second is orphaned. That's exactly what the log shows.
 
-**This is not a bug in the script.** It is the script demonstrating the wrong tool for the job.
-
 ---
 
-## 3b. The workaround — Agents as Tools
+## The workaround — Agents as Tools
 
 `3b_manager_agents_as_tools_WORKS.py`
 
@@ -234,32 +229,10 @@ Run any file:
 ```bash
 python 1_basic_tool_call_openai_framework.py
 python 2_basic_tool_call_langgchain_framework.py
-python 3a_manager_handoff_BROKEN.py       # observe the failure
-python 3b_manager_agents_as_tools_WORKS.py # observe the fix
+python 3_your_first_agentic_ai_workflow.py    
 ```
 
 > `nest_asyncio.apply()` is included for Spyder/Jupyter environments only. It is not part of the agent logic.
-
----
-
-## What to watch for
-
-In `3a_manager_handoff_BROKEN.py`, look at the `raw_responses` dump:
-
-```json
-[
-  { "output": ["transfer_to_riri", "transfer_to_peter"] },
-  { "output": ["get_price(BTC)", "get_price(ADA)"] },
-  { "output": ["message: Sorry, I can't hit 'send' just yet..."] }
-]
-```
-
-Two things to notice:
-
-1. **Turn 1 has two `transfer_to_*` calls.** Only one can take effect.
-2. **The final message comes from Riri, not Boss.** Control was transferred, not borrowed.
-
-In `3b_manager_agents_as_tools_WORKS.py`, the equivalent dump shows Boss calling `get_crypto_price`, then `send_email_via_peter`, then producing the final message itself.
 
 ---
 
