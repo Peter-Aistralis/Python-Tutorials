@@ -50,7 +50,8 @@ if response_llm.output[0].type == "function_call":
     # ... feed the result back and ask again
 '''
 
-Reasoning models (e.g. gpt-6-luna) put an extra reasoning item before the function_call. Its summary may be empty (encrypted-only), but it must be passed back unchanged, or the tool loop breaks. So never assume output[0] is the call — find it by type:
+Reasoning models (e.g. gpt-6-luna) put an extra reasoning item before the function_call. Its summary may be empty (encrypted-only), but it must be passed back unchanged, or the tool loop breaks. So never assume output[0] is the call — find it by type
+
 '''python
 tool_call = next(item for item in response_llm.output if item.type == "function_call")
 args = json.loads(tool_call.arguments)
@@ -68,7 +69,8 @@ response2_llm = client.responses.create(
         }
     ],
 )
-'''
+```
+
 Also read the final text via response2_llm.output_text, not output[0].content[0].text — with a reasoning model, output[0] is the reasoning item (empty content), which is exactly what causes the IndexError.
 
 This works for gpt-4o-mini — but only because it assumes response.output[0] is the only tool call. That assumption is invisible here and will bite in step 3; with a reasoning model it fails immediately.
