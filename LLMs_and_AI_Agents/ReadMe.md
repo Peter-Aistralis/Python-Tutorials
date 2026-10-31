@@ -31,26 +31,22 @@ Nothing agentic yet. This exists so the viewer has a "before" picture and sees h
 
 ---
 
-## 2. Your first tool call — `2_basic_tool_call.py`
+tool_call = next(item for item in response_llm.output if item.type == "function_call")
+args = json.loads(tool_call.arguments)
+price = get_price(args["symbol"])
 
-Introduce a single tool (`get_price`) and the function-calling protocol:
-
-1. Send tools + messages.
-2. Model returns a `function_call` instead of a message.
-3. You execute the function and send the result back.
-4. Model returns the final text.
-
-```python
-if response_llm.output[0].type == "function_call":
-    tool_call_object = response_llm.output[0]
-    args = json.loads(tool_call_object.arguments)
-    price = get_price(args["symbol"])
-    # ... feed the result back and ask again
-```
-
-**This works — but only because it assumes `response.output[0]` is the only tool call.** That assumption is invisible here and will bite in step 3.
-
-> Note: `2_basic_tool_call_framework.py` is the same step rewritten using the `openai-agents` SDK (`Agent`, `function_tool`, `Runner`). It's included to show what the framework *does* for you — and to make the point that steps 3–5 are what's happening under the hood of `Runner.run`.
+response2_llm = client.responses.create(
+    model=model_name,
+    input=[
+        *base_message,
+        *response_llm.output,  # pass back reasoning + function_call items
+        {
+            "type": "function_call_output",
+            "call_id": tool_call.call_id,
+            "output": f"${price:.2f}"
+        }
+    ],
+)
 
 ---
 
