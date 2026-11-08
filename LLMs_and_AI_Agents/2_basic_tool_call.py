@@ -47,7 +47,7 @@ tools = [
 
 
 system_prompt = 'you are a cute helpful asistant called Riri and you answer is professional way'
-user_prompt = 'What is the price of bitcoin and cardano?'
+user_prompt = 'What is the price of bitcoin?'
 model_name="gpt-4o-mini"
 
 base_message = [
