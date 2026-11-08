@@ -84,19 +84,6 @@ response = client.responses.create(
     input=base_message
 )
 
-print("\n--- INITIAL MODEL OUTPUT (FIRST TURN) ---")
-print(json.dumps(response.model_dump(), indent=2))
-print(response.output)
-for item in response.output:
-  if item.type == "message":
-    for c in item.content:
-      if c.type == "output_text":
-        print("Riri initially said:", c.text)
-  elif item.type == "function_call":
-    print(f"Riri decided to call tool: {item.name} with args: {item.arguments}")
-# -----------------------------------------------
-
-
 stop = False
 while True:
     print("\n--- MODEL OUTPUT ---")
