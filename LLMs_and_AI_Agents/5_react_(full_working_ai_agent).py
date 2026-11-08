@@ -4,18 +4,32 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import requests
-from pprint import pprint
+
 
 OPENAI_KEY = os.getenv("Openai_Key")
 CMC_KEY = os.getenv("CMC_Key")
 
 client = OpenAI(api_key=OPENAI_KEY)
 
+def print_reasoning(response):
+    print("\n🧠 --- MODEL REASONING ---")
+    has_reasoning = False
+    for item in response.output:
+        if item.type == "reasoning":
+            for s in item.summary:
+                print(s.text)
+                has_reasoning = True
+    if not has_reasoning:
+        print("(No readable reasoning summary returned this turn)")
+    print("--------------------------\n")
+
 def call_function(name, args):
     if name == "get_price":
         return get_price(**args)
     if name == "send_email":
         return send_email(**args)
+    if name == "get_temperature":
+        return get_temperature(**args)
     raise ValueError(f"Unknown function: {name}")
 
 def get_price(symbol):
@@ -33,9 +47,12 @@ def get_price(symbol):
 
 
 def send_email(name, message):
-    #something
-    #print ('in email function')
+    # Just an empty mock function
     return f'Email has been sent to {name}'
+
+def get_temperature(city):
+    # Another mock function
+    return f'temperature in {city} is 21 degrees'
 
 
 tools = [
@@ -73,13 +90,28 @@ tools = [
             "required": ["name", "message"],
         },
     },
+    {
+        "type": "function",
+        "name": "get_temperature",
+        "description": "get the temperature of a specific city",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "description": "name of the city",
+                },
+            },
+            "required": ["city"],
+        },
+    },
 ]
 
 
-system_prompt = 'you are a cute helpful asistant called Riri'
-user_prompt = 'What is the price of bitcoin and Cardano. Send the price of Bitcoin to Peter the the price of Cardano to XXX'
-model_name="gpt-4o-mini"
-#model_name = "o3-mini"
+system_prompt = 'you are a cute helpful asistant called Kiky and you respond in a very funny way'
+user_prompt = 'What is the price of bitcoin and Cardano. Send the price of Bitcoin to Peter and the price of Cardano to Roger together with the temperature in Ghent'
+#model_name="gpt-4o-mini"
+model_name = "gpt-6-luna"
 base_message = [
     {"role": "system", "content": system_prompt},
     {"role": "user", "content": user_prompt},
@@ -89,22 +121,10 @@ base_message = [
 response = client.responses.create(
     model=model_name,
     tools = tools,
-    input=base_message
+    input=base_message,
+    reasoning={"effort": "medium", "summary": "auto"} # <--- Added to trigger summary
 )
-
-print("\n--- INITIAL MODEL OUTPUT (FIRST TURN) ---")
-print(json.dumps(response.model_dump(), indent=2))
-print(response.output)
-for item in response.output:
-  if item.type == "message":
-    for c in item.content:
-      if c.type == "output_text":
-        print("Riri initially said:", c.text)
-  elif item.type == "function_call":
-    print(f"decided to call tool: {item.name} with args: {item.arguments}")
-# -----------------------------------------------
-
-
+print_reasoning(response)
 
 while True:
     base_message += response.output
@@ -113,8 +133,10 @@ while True:
 
     # No more tool calls → model is done, print the message
     if not function_calls:
-        print("\nFinal Answer \n")
+        print ('Final response from Kiky')
+        print ('------------------------')
         print(response.output_text)
+        print('\nToken Usage: ',response.usage.total_tokens)
         break
 
     # Execute ALL calls in this turn (handles parallel + sequential)
@@ -130,7 +152,8 @@ while True:
 
     # Re-ask ONCE after collecting all outputs for this turn
     response = client.responses.create(model=model_name, input=base_message, tools=tools)
-    print(json.dumps(response.model_dump(), indent=2))
+    
+
     
         
 
